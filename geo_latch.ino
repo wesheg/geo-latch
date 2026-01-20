@@ -4,46 +4,50 @@
 #define GPSECHO false
 
 LiquidCrystal lcd(10, 11, 5, 2, 1, 0);
-boolean usingInterrupt =
-    false;  // used for interrupt running in background for reading GPS
+// used for interrupt running in background for reading GPS
+boolean usingInterrupt = false;  
 void useInterrupt(boolean);
 SoftwareSerial mySerial(8, 7);
 Adafruit_GPS GPS(&mySerial);
 PWMServo myservo;
 
-float destination_lat = 0;
-float destination_long = 0;
-const int unlocked = 0;
-const int locked = 50;
+// Pin locations
 const int servo = 9;
-bool box_locked = false;
 const int led = 3;            // led ring around the red button
 const int button = 12;        // red button input pin
+
+const int unlocked = 0;
+const int locked = 50;
+bool box_locked = false;
 int override_push_count = 0;  // sets number of button pushes for lock override
 int total_push_count = 0;     // keeps track of total red button pushes
-int last_button_state =
-    digitalRead(button);  // integer used in override lock function
+int last_button_state = digitalRead(button);  // integer used in override lock function
 unsigned long override_timer_start = 0;  // timer used in override lock function
 bool lock_override = false;
 
-const int destination_count =
-    1;  // number of destinations in the scavenger hunt
+const int destination_count = 1;  // number of destinations in the scavenger hunt
 
 // latitude is first; longitude second
 const float destinations[destination_count][2] = {{36.108867, -86.764774}};
+float destination_lat = 0;
+float destination_long = 0;
 
 const int earth_radius = 3961;  // Earth's radius in miles
-const int red_led_ring = 3;     // pin for light on red button
 String row1_last = "";          // initial variables for lcd_clean_print
 String row2_last = "";          // initial variables for lcd_clean_print
 
 int get_next_destination(float current_lat, float current_long) {
   int next_destination = 0;
   for (int i = 0; i < destination_count; i++) {
-    float distance = haversine_distance(current_lat, current_long,
-                                        destinations[i][0], destinations[i][1]);
+    float distance = haversine_distance(
+      current_lat,
+      current_long,
+      destinations[i][0],
+      destinations[i][1]
+    );
 
-    if (distance < 0.03) {
+    const float close_range = 0.03;
+    if (distance < close_range) {
       if (i < destination_count - 1) {
         next_destination = i + 1;
       }
@@ -197,6 +201,9 @@ void record_button_push() {
   }
 }
 
+/**
+ * Overrides the lock state based on the button state.
+ */
 void override_lock() {
   if (digitalRead(button) == HIGH) {
     unlock_box();
@@ -218,9 +225,15 @@ void unlock_box() { myservo.write(unlocked); }
  */
 void lock_box() { myservo.write(locked); }
 
+/**
+ * Handles the red button LED fading and box locking/unlocking.
+ */
 void red_button() {
+  const int fully_on = 255;
+  const int fade_increment = 17;
+
   if (digitalRead(button) == LOW) {
-    for (int fadeValue = 0; fadeValue <= 255; fadeValue += 17) {
+    for (int fadeValue = 0; fadeValue <= fully_on; fadeValue += fade_increment) {
       if (digitalRead(button) == LOW) {
         analogWrite(led, fadeValue);
         lock_box();
@@ -231,7 +244,7 @@ void red_button() {
       delay(30);
     }
 
-    for (int fadeValue = 255; fadeValue >= 0; fadeValue -= 17) {
+    for (int fadeValue = fully_on; fadeValue >= 0; fadeValue -= fade_increment) {
       if (digitalRead(button) == LOW) {
         analogWrite(led, fadeValue);
         lock_box();
@@ -252,6 +265,8 @@ void red_button() {
 void lcd_start() {
   int timer_start = millis();
   int current_time = millis();
+  const int five_seconds = 5000;
+  const int thirteen_seconds = 13000;
 
   lcd.clear();
   lcd.setCursor(2, 0);
@@ -259,14 +274,14 @@ void lcd_start() {
   lcd.setCursor(2, 1);
   lcd.print("adventure?");
 
-  while (current_time - timer_start < 5000) {
+  while (current_time - timer_start < five_seconds) {
     current_time = millis();
   }
 
   lcd.clear();
   lcd.print("    Take Me:    ");
 
-  while (current_time - timer_start < 13000) {
+  while (current_time - timer_start < thirteen_seconds) {
     current_time = millis();
   }
 }
@@ -406,7 +421,8 @@ void loop() {
     String output_x = x_units + ' ' + x_direction;
     String output_y = y_units + ' ' + y_direction;
 
-    if (x < 0.015 && y < 0.015) {  // draw 25 yard radius around destination
+    const float twenty_five_yards = 25 / 1760.0;  // 25 yards in miles
+    if (x < twenty_five_yards && y < twenty_five_yards) {  // draw 25 yard radius around destination
       int starting_push_count = total_push_count;
       while (total_push_count == starting_push_count) {
         lcd_clean_print("  Open the box!  ", "");
