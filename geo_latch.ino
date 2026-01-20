@@ -26,29 +26,10 @@ bool lock_override = false;
 
 const int destination_count = 1;        // number of destinations in the scavenger hunt
 
-// destinations
 // latitude is first; longitude second
-//const float destinations[destination_count][2] = {
-//  {35.785419, -86.911594},        // Shell Station in Spring Hill
-//  {36.138104, -86.8156},          // Love Circle
-//  {36.151586, -86.814183},        // Centennial Park
-//  {36.131458, -86.795543},        // PM Restaurant
-//  {35.966053, -86.814629},        // Barnes & Noble, Brentwood
-//  {35.784689, -86.886701}         // Home   
-//};
-
 const float destinations[destination_count][2] = {
     {36.108867, -86.764774}
   };
-
-
-//const int destination_count = 4;
-//const float destinations[destination_count][4] = {
-//  {35.784591, -86.915058},           // Kroger test
-//  {35.797334, -86.905544},          // Exxon test
-//  {35.924381, -86.816003},          // LifeTime tet
-//  {35.784689, -86.886701}           // Home test 
-//};
 
 
 const int earth_radius = 3961;            // Earth's radius in miles
@@ -95,86 +76,102 @@ float haversine_distance(float lat1, float long1, float lat2, float long2) {
   }
 
 
+/**
+ * Calculates the distance in miles between two coordinates on the same longitude.
+ * 
+ * @param lat1 Latitude of the first coordinate in decimal degrees.
+ * @param lat2 Latitude of the second coordinate in decimal degrees.
+ * @param long2 Longitude of both coordinates in decimal degrees.
+ * @return Distance in miles between the two coordinates.
+ */
 float haversine_y_distance(float lat1, float lat2, float long2) {
-  // calculates the distance in miles between two coordinates on the same longitude
-  // inputs in decimal degrees
-
   float lat1R = lat1 * PI / 180;
   float long1R = long2 * PI / 180;
   float lat2R = lat2 * PI / 180;
   float long2R = long2 * PI / 180;
   
   float dlat = (lat2 - lat1) * PI / 180;
-  float dlon = (long2 - long2) * PI / 180;
+  float dlon = 0;
   float a = pow(sin(dlat / 2), 2) + cos(lat1R) * cos(lat2R) * pow(sin(dlon / 2), 2);
   float c = 2 * atan2(pow(a, 0.5), pow(1 - a, 0.5));
   float d = earth_radius * c;
   return d;
-  
-  
-  }
+}
 
+/**
+ * Calculates the distance in miles between two coordinates on the same latitude.
+ * 
+ * @param long1 Longitude of the first coordinate in decimal degrees.
+ * @param long2 Longitude of the second coordinate in decimal degrees.
+ * @param lat2 Latitude of both coordinates in decimal degrees.
+ * @return Distance in miles between the two coordinates.
+ */
 float haversine_x_distance(float long1, float long2, float lat2) {
-  // calculates the distance in miles between two coordinates on the same latitude
-  // inputs in decimal degrees
-
   float lat1R = lat2 * PI / 180;
   float long1R = long1 * PI / 180;
   float lat2R = lat2 * PI / 180;
   float long2R = long2 * PI / 180;
   
-  float dlat = (lat2 - lat2) * PI / 180;
+  float dlat = 0;
   float dlon = (long1 - long2) * PI / 180;
   float a = pow(sin(dlat / 2), 2) + cos(lat1R) * cos(lat2R) * pow(sin(dlon / 2), 2);
   float c = 2 * atan2(pow(a, 0.5), pow(1 - a, 0.5));
   float d = earth_radius * c;
   return d;
-  
-  
-  }
+}
 
+/**
+ * Converts distance in miles to a string with appropriate units.
+ * 
+ * @param distance Distance in miles.
+ * @return A string representing the distance with units ("miles" or "yards").
+ */
 String unit_convert(float distance) {
-  // returns "miles" if distance > 1
-  // returns "yards" if distance < 1
   String new_distance_string;
   String units;
   if (distance >= 1) {
     new_distance_string = String(distance, 1);
     units = " miles";
-    } else {
+  } else {
     new_distance_string = String(distance * 1760, 0);
     units = " yards";  
-    }
-
-    return new_distance_string + units;
   }
+  return new_distance_string + units;
+}
 
 
-String cardinal_direction(float current_coordinate, float destination_coordinate, bool latitude){
-  // returns "North" or "South" if latitude == false
-  // returns "East" or "West" if latitude == true
+/**
+ * Determines the cardinal direction from the current coordinate to the destination coordinate.
+ * 
+ * @param current_coordinate The current latitude or longitude.
+ * @param destination_coordinate The destination latitude or longitude.
+ * @param latitude A boolean indicating if the coordinates are latitude (true) or longitude (false).
+ * @return A string representing the cardinal direction ("North", "South", "East", or "West").
+ */
+String cardinal_direction(
+  float current_coordinate,
+  float destination_coordinate,
+  bool latitude
+){
   if (latitude) {
     if (destination_coordinate > current_coordinate) {
       return "North";
-      } else {
-        return "South"; 
-        }
-    } else {
-      if (destination_coordinate > current_coordinate) {
-        return "East";
-        } else {
-          return "West";
-          }
-      }
-  
-  
+    }
+    return "South"; 
   }
 
+  if (destination_coordinate > current_coordinate) {
+    return "East";
+  }
+    return "West";
+}
 
+
+/**
+ * Records the number of button pushes within a 5-second window.
+ */
 void record_button_push() {
-  // records the number of red button presses & releases in a 5 second window
-  
-  int current_time = millis();    // current number of milliseconds since Arduino start
+  int current_time = millis();
   if (override_push_count == 0 && digitalRead(button) == HIGH) {
     // starts 5 second timer as soon as the first push is complete
     override_timer_start = current_time;
@@ -210,16 +207,19 @@ void override_lock() {
   }
 }
   
+/**
+ * Rotate the servo to unlock the box.
+ */
 void unlock_box() {
   myservo.write(unlocked);
 }
 
+/**
+ * Rotate the servo to lock the box.
+ */
 void lock_box() {
   myservo.write(locked);
-
 }
-
-
 
 
 void red_button () {
