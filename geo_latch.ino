@@ -11,31 +11,38 @@ SoftwareSerial mySerial(8, 7);
 Adafruit_GPS GPS(&mySerial);
 PWMServo myservo;
 
-// Pin locations
+/** Pin Locations */
 const int servo = 9;
 const int led = 3;            // led ring around the red button
 const int button = 12;        // red button input pin
 
+/** Constants */
+const int earth_radius = 3961;  // Earth's radius in miles
 const int unlocked = 0;
 const int locked = 50;
-bool box_locked = false;
 int override_push_count = 0;  // sets number of button pushes for lock override
 int total_push_count = 0;     // keeps track of total red button pushes
 int last_button_state = digitalRead(button);  // integer used in override lock function
 unsigned long override_timer_start = 0;  // timer used in override lock function
 bool lock_override = false;
+String row1_last = "";          // initial variables for lcd_clean_print
+String row2_last = "";          // initial variables for lcd_clean_print
 
+/** Destination List */
 const int destination_count = 1;  // number of destinations in the scavenger hunt
-
 // latitude is first; longitude second
 const float destinations[destination_count][2] = {{36.108867, -86.764774}};
 float destination_lat = 0;
 float destination_long = 0;
 
-const int earth_radius = 3961;  // Earth's radius in miles
-String row1_last = "";          // initial variables for lcd_clean_print
-String row2_last = "";          // initial variables for lcd_clean_print
 
+/**
+ * Determines the next destination based on the current latitude and longitude.
+ *
+ * @param current_lat The current latitude in decimal degrees.
+ * @param current_long The current longitude in decimal degrees.
+ * @return The index of the next destination in the destinations array.
+ */
 int get_next_destination(float current_lat, float current_long) {
   int next_destination = 0;
   for (int i = 0; i < destination_count; i++) {
@@ -265,8 +272,6 @@ void red_button() {
 void lcd_start() {
   int timer_start = millis();
   int current_time = millis();
-  const int five_seconds = 5000;
-  const int thirteen_seconds = 13000;
 
   lcd.clear();
   lcd.setCursor(2, 0);
@@ -274,14 +279,14 @@ void lcd_start() {
   lcd.setCursor(2, 1);
   lcd.print("adventure?");
 
-  while (current_time - timer_start < five_seconds) {
+  while (current_time - timer_start < 5000) {
     current_time = millis();
   }
 
   lcd.clear();
   lcd.print("    Take Me:    ");
 
-  while (current_time - timer_start < thirteen_seconds) {
+  while (current_time - timer_start < 13000) {
     current_time = millis();
   }
 }
@@ -327,11 +332,8 @@ float decimal_degrees(float coordinate, String cardinal) {
 
   if (cardinal == "N" || cardinal == "E") {
     return decimal_degrees;
-  } else if (cardinal == "S" || cardinal == "W") {
-    return -decimal_degrees;
-  } else {
-    return;
   }
+  return -decimal_degrees;
 }
 
 SIGNAL(TIMER0_COMPA_vect) {
