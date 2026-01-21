@@ -10,9 +10,9 @@ Arduino sketch that powered the locking mechanism of a homemade wooden box. A
 small LCD screen gave the player directions and would alert them when they were 
 close.
 
-<img src="images/outside.jpg" width="300"/>
+![image](images/outside.jpg)
 
-<img src="images/inside.jpg" width="300" />
+![image](images/inside.jpg)
 
 ---
 ## How It Worked
